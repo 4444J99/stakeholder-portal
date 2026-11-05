@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
+
+  <h1 style="font-family: monospace; border-bottom: 3px solid #00ffff; padding-bottom: 0.5rem;">
+    TRIVIUM — DIALECTICA UNIVERSALIS
+  </h1>
+
+  <p style="font-family: monospace; color: #aaa; margin-bottom: 2rem;">
+    The structural isomorphism of thought, truth, and computation.
+    Eight organs. Eight dialects. One universal logic.
+    <br><em>SPEC-018 · {{ dialect_count }} dialects · {{ pair_count }} translation pairs</em>
+  </p>
+
+  {% if error %}
+  <div style="background: #330000; border: 1px solid #ff0000; padding: 1rem; margin-bottom: 2rem; font-family: monospace;">
+    Error loading trivium data: {{ error }}
+  </div>
+  {% endif %}
+
+  <!-- Tier Distribution -->
+  <h2 style="font-family: monospace; color: #00ffff;">Translation Tier Distribution</h2>
+  <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+    {% for tier, count in tier_counts.items() %}
+    <div style="background: #111; border: 2px solid {{ tier_colors.get(tier, '#333') }}; padding: 1rem 1.5rem; font-family: monospace; min-width: 120px;">
+      <div style="font-size: 2rem; color: {{ tier_colors.get(tier, '#333') }}; font-weight: bold;">{{ count }}</div>
+      <div style="color: #888; text-transform: uppercase; font-size: 0.75rem;">{{ tier }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- The Eight Dialects -->
+  <h2 style="font-family: monospace; color: #ff00ff;">The Eight Dialects</h2>
+  <table style="width: 100%; border-collapse: collapse; font-family: monospace; margin-bottom: 2rem;">
+    <thead>
+      <tr style="border-bottom: 2px solid #ff00ff;">
+        <th style="text-align: left; padding: 0.5rem; color: #888;">Organ</th>
+        <th style="text-align: left; padding: 0.5rem; color: #888;">Dialect</th>
+        <th style="text-align: left; padding: 0.5rem; color: #888;">Classical</th>
+        <th style="text-align: left; padding: 0.5rem; color: #888;">Translation Role</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in dialects %}
+      <tr style="border-bottom: 1px solid #222;">
+        <td style="padding: 0.5rem; color: #00ffff; font-weight: bold;">{{ d.organ_key }} ({{ d.organ_name }})</td>
+        <td style="padding: 0.5rem;">{{ d.dialect }}</td>
+        <td style="padding: 0.5rem; color: #ffff00;">{{ d.classical_parallel }}</td>
+        <td style="padding: 0.5rem; color: #aaa; font-size: 0.85rem;">{{ d.translation_role }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Translation Matrix -->
+  <h2 style="font-family: monospace; color: #ffff00;">Translation Matrix ({{ pair_count }} pairs)</h2>
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; font-family: monospace; font-size: 0.8rem;">
+      <thead>
+        <tr style="border-bottom: 2px solid #ffff00;">
+          <th style="text-align: left; padding: 0.4rem; color: #888;">Source</th>
+          <th style="text-align: left; padding: 0.4rem; color: #888;">Target</th>
+          <th style="text-align: left; padding: 0.4rem; color: #888;">Tier</th>
+          <th style="text-align: left; padding: 0.4rem; color: #888;">Preservation</th>
+          <th style="text-align: left; padding: 0.4rem; color: #888;">Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pairs %}
+        <tr style="border-bottom: 1px solid #1a1a1a;">
+          <td style="padding: 0.4rem; color: #00ffff;">{{ p.source }}</td>
+          <td style="padding: 0.4rem; color: #00ffff;">{{ p.target }}</td>
+          <td style="padding: 0.4rem;">
+            <span style="background: {{ tier_colors.get(p.tier, '#333') }}; color: #000; padding: 0.1rem 0.4rem; font-size: 0.7rem; font-weight: bold;">
+              {{ p.tier | upper }}
+            </span>
+          </td>
+          <td style="padding: 0.4rem; color: #aaa;">{{ p.preservation }}</td>
+          <td style="padding: 0.4rem; color: #666; max-width: 400px;">{{ p.description[:80] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top: 2rem; padding: 1rem; border-top: 1px solid #333; font-family: monospace; color: #555; font-size: 0.8rem;">
+    CLI: <code>organvm trivium dialects</code> · <code>organvm trivium matrix</code> · <code>organvm trivium scan I III</code> · <code>organvm trivium synthesize --write</code>
+  </div>
+
+</div>
+{% endblock %}

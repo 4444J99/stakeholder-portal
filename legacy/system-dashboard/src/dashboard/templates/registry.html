@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Registry Browser</h1>
+
+<div class="card">
+    <h2>Filters</h2>
+    <form method="get" action="/registry" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <select name="organ">
+            <option value="">All Organs</option>
+            {% for key in organ_keys %}
+            <option value="{{ key }}" {{ 'selected' if filter_organ == key else '' }}>{{ key }}</option>
+            {% endfor %}
+        </select>
+        <select name="status">
+            <option value="">All Statuses</option>
+            <option value="ACTIVE" {{ 'selected' if filter_status == 'ACTIVE' else '' }}>ACTIVE</option>
+            <option value="ARCHIVED" {{ 'selected' if filter_status == 'ARCHIVED' else '' }}>ARCHIVED</option>
+            <option value="PROTOTYPE" {{ 'selected' if filter_status == 'PROTOTYPE' else '' }}>PROTOTYPE</option>
+        </select>
+        <select name="tier">
+            <option value="">All Tiers</option>
+            <option value="flagship" {{ 'selected' if filter_tier == 'flagship' else '' }}>flagship</option>
+            <option value="standard" {{ 'selected' if filter_tier == 'standard' else '' }}>standard</option>
+            <option value="archive" {{ 'selected' if filter_tier == 'archive' else '' }}>archive</option>
+        </select>
+        <button type="submit" style="background: var(--cyan); color: var(--black); border: none; padding: 0.4rem 1rem; cursor: pointer; font-family: inherit; text-transform: uppercase;">Filter</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>{{ total }} Repositories</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Organ</th>
+                <th>Status</th>
+                <th>Tier</th>
+                <th>Promotion</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for repo in repos %}
+            <tr>
+                <td><a href="https://github.com/{{ repo.org }}/{{ repo.name }}" style="color: var(--cyan);">{{ repo.name }}</a></td>
+                <td>{{ repo.organ }}</td>
+                <td>{{ repo.status }}</td>
+                <td><span class="badge badge-{{ repo.tier }}">{{ repo.tier }}</span></td>
+                <td>{{ repo.promotion }}</td>
+                <td style="color: #888; font-size: 0.8rem;">{{ repo.description }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

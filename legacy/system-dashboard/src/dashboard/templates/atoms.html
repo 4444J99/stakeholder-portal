@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Atoms Pipeline</h1>
+
+<!-- Summary metrics -->
+<div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem;">
+    <div class="metric">
+        <div class="value">{{ total_tasks }}</div>
+        <div class="label">Tasks</div>
+    </div>
+    <div class="metric">
+        <div class="value">{{ total_pending }}</div>
+        <div class="label">Pending</div>
+    </div>
+    <div class="metric">
+        <div class="value">{{ total_prompts }}</div>
+        <div class="label">Prompts</div>
+    </div>
+    <div class="metric">
+        <div class="value">{{ total_xlinks }}</div>
+        <div class="label">Cross-Links</div>
+    </div>
+</div>
+
+<!-- Per-organ summary -->
+<div class="card">
+    <h2>Per-Organ Summary</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Organ</th>
+                <th>Tasks</th>
+                <th>Pending</th>
+                <th>Completed</th>
+                <th>Prompts</th>
+                <th>X-Links</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for o in organs %}
+            <tr>
+                <td>{{ o.key }}</td>
+                <td>{{ o.tasks }}</td>
+                <td>{{ o.pending }}</td>
+                <td>{{ o.completed }}</td>
+                <td>{{ o.prompts }}</td>
+                <td>{{ o.xlinks }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<!-- Pending tasks by repo -->
+{% for o in organs %}
+{% if o.pending_by_repo %}
+<div class="card">
+    <h2>{{ o.key }} — Pending by Repo</h2>
+    {% for repo, tasks in o.pending_by_repo.items() %}
+    <details style="margin-bottom: 0.5rem;">
+        <summary style="cursor: pointer; color: var(--yellow);">{{ repo }} ({{ tasks|length }})</summary>
+        <div class="table-wrap">
+        <table style="margin-top: 0.5rem;">
+            <thead>
+                <tr><th>ID</th><th>Title</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+            {% for t in tasks[:10] %}
+                <tr>
+                    <td style="font-size:0.75rem;">{{ t.id[:12] }}</td>
+                    <td>{{ t.title[:60] }}</td>
+                    <td>{{ t.status }}</td>
+                </tr>
+            {% endfor %}
+            {% if tasks|length > 10 %}
+                <tr><td colspan="3" style="color:#888;">... and {{ tasks|length - 10 }} more</td></tr>
+            {% endif %}
+            </tbody>
+        </table>
+        </div>
+    </details>
+    {% endfor %}
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- Prompt type distribution -->
+<div class="card">
+    <h2>Prompt Type Distribution</h2>
+    {% set all_types = {} %}
+    {% for o in organs %}
+        {% for ptype, count in o.prompt_dist.items() %}
+            {% if ptype in all_types %}
+                {% set _ = all_types.update({ptype: all_types[ptype] + count}) %}
+            {% else %}
+                {% set _ = all_types.update({ptype: count}) %}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+    {% if all_types %}
+    {% for ptype, count in all_types.items()|sort(attribute='1', reverse=true) %}
+    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.3rem;">
+        <span style="width: 120px; font-size: 0.8rem;">{{ ptype }}</span>
+        <div style="flex: 1; background: var(--gray); height: 1rem;">
+            <div style="background: var(--cyan); height: 100%; width: {{ (count / total_prompts * 100) if total_prompts else 0 }}%;"></div>
+        </div>
+        <span style="width: 50px; text-align: right; font-size: 0.8rem;">{{ count }}</span>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p style="color: #888;">No prompt data available.</p>
+    {% endif %}
+</div>
+
+<!-- Top domain fingerprints -->
+{% if top_fingerprints %}
+<div class="card">
+    <h2>Top Domain Fingerprints</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Fingerprint</th><th>Count</th></tr>
+        </thead>
+        <tbody>
+        {% for fp, count in top_fingerprints %}
+            <tr>
+                <td style="font-size:0.8rem;">{{ fp[:24] }}</td>
+                <td>{{ count }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Pipeline health -->
+<div class="card">
+    <h2>Pipeline Health</h2>
+    {% if manifest %}
+    <div class="table-wrap">
+    <table>
+        <tbody>
+            <tr><td>Last run</td><td>{{ manifest.get('generated', '?')[:19] }}</td></tr>
+            <tr><td>Tasks</td><td>{{ manifest.get('counts', {}).get('tasks', 0) }}</td></tr>
+            <tr><td>Prompts</td><td>{{ manifest.get('counts', {}).get('prompts', 0) }}</td></tr>
+            <tr><td>Links</td><td>{{ manifest.get('counts', {}).get('links', 0) }}</td></tr>
+            <tr><td>Errors</td><td>{{ manifest.get('counts', {}).get('errors', 0) }}</td></tr>
+            {% if manifest.get('quality') %}
+            <tr><td>Null-organ tasks</td><td>{{ manifest.quality.null_organ_tasks }}</td></tr>
+            <tr><td>Empty fingerprints</td><td>{{ manifest.quality.empty_fingerprint_prompts }}</td></tr>
+            <tr><td>Link threshold</td><td>{{ manifest.quality.link_threshold }}</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p style="color: #888;">No pipeline data. Run <code>organvm atoms pipeline --write</code>.</p>
+    {% endif %}
+</div>
+{% endblock %}

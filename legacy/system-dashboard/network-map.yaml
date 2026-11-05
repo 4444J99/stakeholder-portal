@@ -1,0 +1,33 @@
+schema_version: '1.0'
+repo: system-dashboard
+organ: META-ORGANVM
+mirrors:
+  technical:
+  - project: tiangolo/fastapi
+    platform: github
+    relevance: 'Python dependency: fastapi'
+    engagement:
+    - watch
+    tags:
+    - auto-discovered
+    - python-dep
+  - project: encode/uvicorn
+    platform: github
+    relevance: 'Python dependency: uvicorn'
+    engagement:
+    - watch
+    tags:
+    - auto-discovered
+    - python-dep
+  - project: pallets/jinja
+    platform: github
+    relevance: 'Python dependency: jinja2'
+    engagement:
+    - watch
+    tags:
+    - auto-discovered
+    - python-dep
+  parallel: []
+  kinship: []
+ledger: ~/.organvm/network/ledger.jsonl
+last_scanned: '2026-03-20T11:55:26.322039+00:00'

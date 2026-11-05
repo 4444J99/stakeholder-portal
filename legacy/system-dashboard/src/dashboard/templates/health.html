@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>System Health</h1>
+
+<div style="display: flex; flex-wrap: wrap;">
+    <div class="metric"><div class="value">{{ total_repos }}</div><div class="label">Repos</div></div>
+    <div class="metric"><div class="value">{{ active_repos }}</div><div class="label">Active</div></div>
+    <div class="metric"><div class="value">{{ archived_repos }}</div><div class="label">Archived</div></div>
+    <div class="metric"><div class="value">{{ ci_workflows }}</div><div class="label">CI Workflows</div></div>
+    <div class="metric"><div class="value">{{ dep_edges }}</div><div class="label">Dependencies</div></div>
+    <div class="metric"><div class="value">{{ essays }}</div><div class="label">Essays</div></div>
+    <div class="metric"><div class="value">{{ sprints }}</div><div class="label">Sprints</div></div>
+    <div class="metric"><div class="value">{{ total_words }}</div><div class="label">Words</div></div>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <h2>Organs</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Organ</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Repos</th>
+                <th>Active</th>
+                <th>Flagships</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for organ in organs %}
+            <tr>
+                <td>{{ organ.key }}</td>
+                <td>{{ organ.name }}</td>
+                <td class="{{ 'pass' if organ.status == 'OPERATIONAL' else 'fail' }}">{{ organ.status }}</td>
+                <td>{{ organ.total }}</td>
+                <td>{{ organ.active }}</td>
+                <td>{{ organ.flagships }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

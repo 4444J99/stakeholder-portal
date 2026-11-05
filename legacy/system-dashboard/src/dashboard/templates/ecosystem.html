@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Ecosystem</h1>
+
+<div style="display: flex; flex-wrap: wrap;">
+    <div class="metric"><div class="value">{{ total_products }}</div><div class="label">Products</div></div>
+    <div class="metric"><div class="value">{{ pillars|length }}</div><div class="label">Pillars</div></div>
+    <div class="metric">
+        <div class="value">{{ summary.get('live', 0) }}</div>
+        <div class="label">Live</div>
+    </div>
+    <div class="metric">
+        <div class="value">{{ summary.get('in_progress', 0) }}</div>
+        <div class="label">In Progress</div>
+    </div>
+    <div class="metric">
+        <div class="value">{{ summary.get('planned', 0) }}</div>
+        <div class="label">Planned</div>
+    </div>
+    <div class="metric">
+        <div class="value">{{ summary.get('not_started', 0) }}</div>
+        <div class="label">Not Started</div>
+    </div>
+</div>
+
+<!-- Status Distribution Bar -->
+{% set total_arms = summary.values()|sum %}
+{% if total_arms > 0 %}
+<div class="card" style="margin-top: 2rem;">
+    <h2>Status Distribution</h2>
+    <div style="display: flex; height: 2rem; width: 100%; border: 1px solid var(--border);">
+        {% set live_pct = (summary.get('live', 0) / total_arms * 100)|round(1) %}
+        {% set prog_pct = (summary.get('in_progress', 0) / total_arms * 100)|round(1) %}
+        {% set plan_pct = (summary.get('planned', 0) / total_arms * 100)|round(1) %}
+        {% set ns_pct = (summary.get('not_started', 0) / total_arms * 100)|round(1) %}
+        {% if live_pct > 0 %}
+        <div style="width: {{ live_pct }}%; background: var(--pass); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #000; font-weight: bold;"
+             title="Live: {{ summary.get('live', 0) }}">{{ live_pct }}%</div>
+        {% endif %}
+        {% if prog_pct > 0 %}
+        <div style="width: {{ prog_pct }}%; background: var(--cyan); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #000; font-weight: bold;"
+             title="In Progress: {{ summary.get('in_progress', 0) }}">{{ prog_pct }}%</div>
+        {% endif %}
+        {% if plan_pct > 0 %}
+        <div style="width: {{ plan_pct }}%; background: var(--yellow); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #000; font-weight: bold;"
+             title="Planned: {{ summary.get('planned', 0) }}">{{ plan_pct }}%</div>
+        {% endif %}
+        {% if ns_pct > 0 %}
+        <div style="width: {{ ns_pct }}%; background: var(--gray); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--white); font-weight: bold;"
+             title="Not Started: {{ summary.get('not_started', 0) }}">{{ ns_pct }}%</div>
+        {% endif %}
+    </div>
+    <div style="margin-top: 0.5rem; font-size: 0.75rem; display: flex; gap: 1.5rem;">
+        <span><span style="color: var(--pass);">&#9632;</span> Live</span>
+        <span><span style="color: var(--cyan);">&#9632;</span> In Progress</span>
+        <span><span style="color: var(--yellow);">&#9632;</span> Planned</span>
+        <span><span style="color: var(--gray);">&#9632;</span> Not Started</span>
+    </div>
+</div>
+{% endif %}
+
+<!-- Coverage Heatmap -->
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Coverage Matrix</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Repo</th>
+                {% for p in pillars %}
+                <th style="text-align: center;">{{ p }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in heatmap %}
+            <tr>
+                <td>{{ row.repo }}</td>
+                {% for p in pillars %}
+                <td style="text-align: center;">
+                    {% if row.pillars[p] is not none %}
+                        {% set cell = row.pillars[p] %}
+                        {% if cell.live > 0 %}
+                        <span style="color: var(--pass); font-weight: bold;">{{ cell.live }}/{{ cell.total }}</span>
+                        {% elif cell.total > 0 %}
+                        <span style="color: var(--yellow);">0/{{ cell.total }}</span>
+                        {% else %}
+                        <span style="color: #666;">-</span>
+                        {% endif %}
+                    {% else %}
+                    <span style="color: #333;">-</span>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<!-- Next Actions -->
+{% if actions %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Next Actions (Top 10)</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Repo</th>
+                <th>Pillar</th>
+                <th>Priority</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in actions %}
+            <tr>
+                <td>{{ a.repo }}</td>
+                <td>{{ a.pillar }}</td>
+                <td>
+                    {% if a.priority == 'critical' %}
+                    <span class="badge" style="border-color: var(--fail); color: var(--fail);">{{ a.priority }}</span>
+                    {% elif a.priority == 'high' %}
+                    <span class="badge" style="border-color: var(--yellow); color: var(--yellow);">{{ a.priority }}</span>
+                    {% else %}
+                    <span class="badge">{{ a.priority }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ a.action }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

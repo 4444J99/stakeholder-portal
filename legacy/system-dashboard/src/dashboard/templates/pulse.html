@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>System Pulse</h1>
+
+{% if error %}
+<div class="card" style="border-color: var(--fail);">
+    <h2 style="color: var(--fail);">Pulse Unavailable</h2>
+    <p>{{ error }}</p>
+</div>
+{% else %}
+
+<!-- Mood Card -->
+{% if mood %}
+<div class="card" style="border-color: var(--magenta);">
+    <h2 style="color: var(--magenta);">Mood</h2>
+    <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1rem;">
+        <span style="font-size: 4rem; line-height: 1; color: var(--magenta);">{{ mood.mood.glyph }}</span>
+        <div>
+            <div style="font-size: 1.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.15em; color: var(--magenta);">
+                {{ mood.mood.value }}
+            </div>
+            <div style="font-size: 0.85rem; color: #888; margin-top: 0.25rem;">
+                {{ mood.mood.description }}
+            </div>
+        </div>
+    </div>
+    {% if mood.reasoning %}
+    <div style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; color: #666; margin-bottom: 0.5rem; letter-spacing: 0.1em;">Reasoning</div>
+        {% for line in mood.reasoning %}
+        <div style="font-size: 0.85rem; padding: 0.2rem 0 0.2rem 1rem; border-left: 2px solid var(--magenta);">{{ line }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- AMMOI Density Card -->
+{% if ammoi %}
+<div class="card" style="border-color: var(--yellow); margin-bottom: 1.5rem;">
+    <h2 style="color: var(--yellow);">AMMOI — System Density</h2>
+    <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 1rem;">
+        <div style="text-align: center;">
+            <div style="font-size: 3.5rem; font-weight: bold; color: var(--yellow); line-height: 1;">
+                {{ (ammoi.system_density * 100)|round(1) }}%
+            </div>
+            <div style="font-size: 0.7rem; text-transform: uppercase; color: #888; letter-spacing: 0.1em;">System Density</div>
+        </div>
+        <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div><div style="font-size: 0.7rem; text-transform: uppercase; color: #666;">Entities</div><div style="font-size: 1.3rem;">{{ ammoi.total_entities }}</div></div>
+            <div><div style="font-size: 0.7rem; text-transform: uppercase; color: #666;">Edges</div><div style="font-size: 1.3rem;">{{ ammoi.active_edges }}</div></div>
+            <div><div style="font-size: 0.7rem; text-transform: uppercase; color: #666;">Events 24h</div><div style="font-size: 1.3rem;">{{ ammoi.event_frequency_24h }}</div></div>
+            <div><div style="font-size: 0.7rem; text-transform: uppercase; color: #666;">Pulse #</div><div style="font-size: 1.3rem;">{{ ammoi.pulse_count }}</div></div>
+        </div>
+    </div>
+
+    <!-- Temporal Deltas -->
+    {% if ammoi.density_delta_24h or ammoi.density_delta_7d or ammoi.density_delta_30d %}
+    <div style="display: flex; gap: 2rem; margin-bottom: 1rem; border-top: 1px solid var(--border); padding-top: 0.75rem;">
+        {% if ammoi.density_delta_24h %}
+        <div>
+            <div style="font-size: 0.7rem; text-transform: uppercase; color: #666;">&#916;24h</div>
+            <div style="font-size: 1.1rem; color: {% if ammoi.density_delta_24h > 0 %}var(--pass){% elif ammoi.density_delta_24h < 0 %}var(--fail){% else %}var(--white){% endif %};">
+                {% if ammoi.density_delta_24h > 0 %}+{% endif %}{{ (ammoi.density_delta_24h * 100)|round(1) }}%
+            </div>
+        </div>
+        {% endif %}
+        {% if ammoi.density_delta_7d %}
+        <div>
+            <div style="font-size: 0.7rem; text-transform: uppercase; color: #666;">&#916;7d</div>
+            <div style="font-size: 1.1rem; color: {% if ammoi.density_delta_7d > 0 %}var(--pass){% elif ammoi.density_delta_7d < 0 %}var(--fail){% else %}var(--white){% endif %};">
+                {% if ammoi.density_delta_7d > 0 %}+{% endif %}{{ (ammoi.density_delta_7d * 100)|round(1) }}%
+            </div>
+        </div>
+        {% endif %}
+        {% if ammoi.density_delta_30d %}
+        <div>
+            <div style="font-size: 0.7rem; text-transform: uppercase; color: #666;">&#916;30d</div>
+            <div style="font-size: 1.1rem; color: {% if ammoi.density_delta_30d > 0 %}var(--pass){% elif ammoi.density_delta_30d < 0 %}var(--fail){% else %}var(--white){% endif %};">
+                {% if ammoi.density_delta_30d > 0 %}+{% endif %}{{ (ammoi.density_delta_30d * 100)|round(1) }}%
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Per-Organ Density Heatmap -->
+    {% if ammoi.organs %}
+    <div style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; color: #666; margin-bottom: 0.5rem; letter-spacing: 0.1em;">Organ Density</div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            {% for oid, od in ammoi.organs.items()|sort(attribute='1.density', reverse=true) %}
+            <div style="border: 1px solid var(--border); padding: 0.5rem 0.75rem; min-width: 7rem; text-align: center;
+                background: rgba({% if od.density >= 0.6 %}0, 255, 136{% elif od.density >= 0.3 %}255, 255, 0{% else %}255, 68, 68{% endif %}, {{ (od.density * 0.15)|round(2) }});">
+                <div style="font-size: 0.65rem; text-transform: uppercase; color: #888; white-space: nowrap;">{{ oid }}</div>
+                <div style="font-size: 1.3rem; font-weight: bold;">{{ (od.density * 100)|round(0)|int }}%</div>
+                <div style="font-size: 0.65rem; color: #666;">{{ od.repo_count }} repos</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Compressed Text -->
+    {% if ammoi.compressed_text %}
+    <div style="margin-top: 0.75rem; font-size: 0.75rem; color: #666; font-style: italic;">{{ ammoi.compressed_text }}</div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Temporal Intelligence Card -->
+{% if temporal %}
+<div class="card" style="border-color: var(--cyan); margin-bottom: 1.5rem;">
+    <h2 style="color: var(--cyan);">Temporal Intelligence</h2>
+    <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 1rem;">
+        <div style="text-align: center;">
+            <div style="font-size: 2.5rem; font-weight: bold; color: var(--cyan); line-height: 1; text-transform: uppercase;">
+                {{ temporal.dominant_trend }}
+            </div>
+            <div style="font-size: 0.7rem; text-transform: uppercase; color: #888; letter-spacing: 0.1em;">Dominant Trend</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; text-transform: uppercase; color: #666;">Momentum</div>
+            <div style="font-size: 1.3rem;">{{ temporal.total_momentum|round(3) }}</div>
+        </div>
+    </div>
+
+    <!-- Density Sparkline -->
+    {% if density_sparkline_svg %}
+    <div style="border-top: 1px solid var(--border); padding-top: 0.75rem; margin-bottom: 0.75rem;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; color: #666; margin-bottom: 0.5rem; letter-spacing: 0.1em;">Density History</div>
+        {{ density_sparkline_svg|safe }}
+    </div>
+    {% endif %}
+
+    <!-- Per-Metric Table -->
+    {% if temporal.metrics %}
+    <div style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; color: #666; margin-bottom: 0.5rem; letter-spacing: 0.1em;">Metric Velocities</div>
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th style="text-align: right;">Current</th>
+                    <th style="text-align: right;">Velocity</th>
+                    <th style="text-align: right;">Accel.</th>
+                    <th>Trend</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in temporal.metrics %}
+                <tr>
+                    <td>{{ m.name }}</td>
+                    <td style="text-align: right;">{{ m.current|round(2) }}</td>
+                    <td style="text-align: right; color: {% if m.velocity > 0 %}var(--pass){% elif m.velocity < 0 %}var(--fail){% else %}#888{% endif %};">
+                        {% if m.velocity > 0 %}+{% endif %}{{ m.velocity|round(4) }}
+                    </td>
+                    <td style="text-align: right;">{{ m.acceleration|round(4) }}</td>
+                    <td>
+                        <span class="badge" style="border-color: {% if m.trend in ['rising', 'accelerating'] %}var(--pass){% elif m.trend in ['falling', 'decelerating'] %}var(--fail){% else %}#666{% endif %}; color: {% if m.trend in ['rising', 'accelerating'] %}var(--pass){% elif m.trend in ['falling', 'decelerating'] %}var(--fail){% else %}#888{% endif %};">
+                            {{ m.trend }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Metrics Row -->
+<div style="display: flex; flex-wrap: wrap;">
+    {% if density %}
+    <div class="metric"><div class="value">{{ density.interconnection_score|round(1) }}</div><div class="label">Density /100</div></div>
+    <div class="metric"><div class="value">{{ total_edges }}</div><div class="label">Edges</div></div>
+    <div class="metric"><div class="value">{{ total_nodes }}</div><div class="label">Seed Nodes</div></div>
+    <div class="metric"><div class="value">{{ cross_organ_edges }}</div><div class="label">Cross-Organ</div></div>
+    {% endif %}
+    {% if event_rows %}
+    <div class="metric"><div class="value">{{ event_rows|length }}</div><div class="label">Recent Events</div></div>
+    {% endif %}
+    {% if nerve_summary %}
+    <div class="metric"><div class="value">{{ nerve_summary|map(attribute='count')|sum }}</div><div class="label">Subscriptions</div></div>
+    {% endif %}
+</div>
+
+<!-- Density Card -->
+{% if density %}
+<div class="card" style="margin-top: 2rem;">
+    <h2>Interconnection Density</h2>
+    <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+        <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: #666;">Edge Saturation</div>
+            <div style="font-size: 1.2rem; color: var(--yellow);">{{ (density.edge_saturation * 100)|round(2) }}%</div>
+        </div>
+        <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: #666;">Unresolved</div>
+            <div style="font-size: 1.2rem; color: {% if density.unresolved_edges > 0 %}var(--fail){% else %}var(--pass){% endif %};">{{ density.unresolved_edges }}</div>
+        </div>
+        <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: #666;">Ecosystem</div>
+            <div style="font-size: 1.2rem;">{{ density.repos_with_ecosystem }}</div>
+        </div>
+    </div>
+
+    <!-- Coverage Bars -->
+    {% if coverage_bars %}
+    <div style="font-size: 0.75rem; text-transform: uppercase; color: #666; margin-bottom: 0.75rem; letter-spacing: 0.1em;">Coverage</div>
+    {% for bar in coverage_bars %}
+    <div style="margin-bottom: 0.75rem;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem;">
+            <span>{{ bar.label }}</span>
+            <span style="color: #888;">{{ bar.count }}/{{ bar.total }} ({{ bar.pct }}%)</span>
+        </div>
+        <div class="progress-bar">
+            <div class="fill" style="width: {{ bar.pct }}%; background: {% if bar.pct >= 75 %}var(--pass){% elif bar.pct >= 40 %}var(--yellow){% else %}var(--fail){% endif %};"></div>
+            <div class="text">{{ bar.pct }}%</div>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Cross-Organ Edges -->
+{% if outbound_orgs or inbound_orgs %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Cross-Organ Wiring</h2>
+    <div style="display: flex; gap: 3rem; flex-wrap: wrap;">
+        <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: #666; margin-bottom: 0.5rem;">Outbound Orgs ({{ outbound_orgs|length }})</div>
+            {% for org in outbound_orgs %}
+            <div style="font-size: 0.85rem; padding: 0.15rem 0;">
+                <span style="color: var(--cyan);">&#8594;</span> {{ org }}
+            </div>
+            {% endfor %}
+        </div>
+        <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: #666; margin-bottom: 0.5rem;">Inbound Orgs ({{ inbound_orgs|length }})</div>
+            {% for org in inbound_orgs %}
+            <div style="font-size: 0.85rem; padding: 0.15rem 0;">
+                <span style="color: var(--yellow);">&#8592;</span> {{ org }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Events -->
+{% if event_rows %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Recent Events</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Type</th>
+                <th>Source</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for evt in event_rows %}
+            <tr>
+                <td style="font-size: 0.8rem; white-space: nowrap;">{{ evt.timestamp }}</td>
+                <td>
+                    <span class="badge" style="border-color: var(--cyan); color: var(--cyan);">{{ evt.event_type }}</span>
+                </td>
+                <td style="color: #888;">{{ evt.source }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Nerve Wiring -->
+{% if nerve_summary %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Nerve Wiring</h2>
+    <div style="font-size: 0.85rem; color: #888; margin-bottom: 1rem;">
+        {{ nerve_summary|map(attribute='count')|sum }} subscriptions across {{ nerve_summary|length }} event types
+    </div>
+    {% for group in nerve_summary %}
+    <details style="margin-bottom: 0.75rem; border: 1px solid var(--border); padding: 0.5rem 0.75rem;">
+        <summary style="cursor: pointer; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">
+            <span style="color: var(--cyan);">{{ group.event_type }}</span>
+            <span style="color: #666; margin-left: 0.5rem;">({{ group.count }})</span>
+        </summary>
+        <div style="padding: 0.5rem 0 0 1rem;">
+            {% for sub in group.subscribers %}
+            <div style="font-size: 0.8rem; padding: 0.15rem 0;">
+                <span style="color: var(--yellow);">&#8594;</span> {{ sub.name }}
+                {% if sub.action %}
+                <span style="color: #666; font-size: 0.7rem;">[{{ sub.action }}]</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Event Counts -->
+{% if event_counts %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Event Distribution</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Event Type</th>
+                <th style="text-align: right;">Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for etype, count in event_counts.items()|sort(attribute='1', reverse=true) %}
+            <tr>
+                <td>{{ etype }}</td>
+                <td style="text-align: right; color: var(--yellow); font-weight: bold;">{{ count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

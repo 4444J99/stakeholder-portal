@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Ontologia — Metrics</h1>
+
+<div style="margin-bottom: 1rem;">
+    <a href="/ontologia/" style="color: var(--cyan); font-size: 0.85rem; text-decoration: none;">&larr; Back to browser</a>
+</div>
+
+{% if not available %}
+<div class="card" style="border-color: var(--fail);">
+    <h2 style="color: var(--fail);">Ontologia Unavailable</h2>
+    <p>The ontologia package is not installed. Install it with:
+    <code style="color: var(--cyan);">pip install -e organvm-ontologia/</code></p>
+</div>
+
+{% else %}
+
+<!-- Summary row -->
+<div style="display: flex; flex-wrap: wrap;">
+    <div class="metric">
+        <div class="value">{{ total_count }}</div>
+        <div class="label">Metric Defs</div>
+    </div>
+    <div class="metric">
+        <div class="value">{{ observation_count }}</div>
+        <div class="label">Observations</div>
+    </div>
+</div>
+
+{% if metrics %}
+<div class="card" style="margin-top: 2rem;">
+    <h2>Metric Definitions</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Unit</th>
+                <th>Aggregation</th>
+                <th>Latest Value</th>
+                <th>Last Observed</th>
+                <th>Source</th>
+                <th>ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in metrics %}
+            <tr>
+                <td style="color: var(--yellow);">{{ m.name }}</td>
+                <td>
+                    {% if m.metric_type == 'gauge' %}
+                    <span class="badge" style="border-color: var(--cyan); color: var(--cyan);">{{ m.metric_type }}</span>
+                    {% elif m.metric_type == 'counter' %}
+                    <span class="badge" style="border-color: var(--pass); color: var(--pass);">{{ m.metric_type }}</span>
+                    {% elif m.metric_type == 'delta' %}
+                    <span class="badge" style="border-color: var(--magenta); color: var(--magenta);">{{ m.metric_type }}</span>
+                    {% elif m.metric_type == 'rolling' %}
+                    <span class="badge" style="border-color: var(--yellow); color: var(--yellow);">{{ m.metric_type }}</span>
+                    {% else %}
+                    <span class="badge" style="border-color: #888; color: #888;">{{ m.metric_type }}</span>
+                    {% endif %}
+                </td>
+                <td style="color: #888;">{{ m.unit if m.unit else "—" }}</td>
+                <td>
+                    <span class="badge" style="border-color: #888; color: #888;">{{ m.aggregation }}</span>
+                </td>
+                <td style="font-family: monospace; font-size: 0.85rem;">
+                    {% if m.latest_value %}
+                    <span style="color: var(--pass);">{{ m.latest_value }}</span>
+                    {% else %}
+                    <span style="color: #666;">—</span>
+                    {% endif %}
+                </td>
+                <td style="font-size: 0.8rem; white-space: nowrap; color: #888;">{{ m.latest_timestamp if m.latest_timestamp else "—" }}</td>
+                <td style="color: #888; font-size: 0.8rem;">{{ m.latest_source if m.latest_source else "—" }}</td>
+                <td style="font-family: monospace; font-size: 0.75rem; color: #555;">{{ m.metric_id }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+{% else %}
+<div class="card" style="margin-top: 2rem; border-color: var(--border);">
+    <h2>No Metrics</h2>
+    <p style="color: #888;">No metric definitions registered. Metrics will appear here once the system registers them.</p>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

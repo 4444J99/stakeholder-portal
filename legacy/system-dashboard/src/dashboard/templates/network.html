@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Network Testament</h1>
+<p style="color: var(--text-dim); margin-bottom: 2rem;">
+    <code>context[current-work] > relevant[open-source] > expand[network]</code>
+</p>
+
+<div style="display: flex; flex-wrap: wrap;">
+    <div class="metric"><div class="value">{{ maps_count }}</div><div class="label">Mapped Repos</div></div>
+    <div class="metric"><div class="value">{{ total_mirrors }}</div><div class="label">Total Mirrors</div></div>
+    <div class="metric"><div class="value">{{ "%.0f"|format(density * 100) }}%</div><div class="label">Density</div></div>
+    <div class="metric"><div class="value">{{ top_convergences|length }}</div><div class="label">Convergences</div></div>
+    <div class="metric"><div class="value">{{ ledger.total_actions }}</div><div class="label">Engagements</div></div>
+    <div class="metric"><div class="value">{{ ledger.unique_projects }}</div><div class="label">External Projects</div></div>
+</div>
+
+<!-- Lens Coverage -->
+<div class="card" style="margin-top: 2rem;">
+    <h2>Mirror Coverage by Lens</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Lens</th>
+                <th>Coverage</th>
+                <th>Visual</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lens_name in ['technical', 'parallel', 'kinship'] %}
+            <tr>
+                <td><strong>{{ lens_name }}</strong></td>
+                <td>{{ "%.0f"|format(coverage[lens_name] * 100) }}%</td>
+                <td>
+                    <div style="background: var(--bg-dark); height: 1.2rem; width: 200px; position: relative;">
+                        <div style="background: {% if lens_name == 'technical' %}var(--cyan){% elif lens_name == 'parallel' %}var(--magenta){% else %}var(--yellow){% endif %}; height: 100%; width: {{ (coverage[lens_name] * 100)|int }}%;"></div>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Convergence Points -->
+{% if top_convergences %}
+<div class="card" style="margin-top: 2rem;">
+    <h2>Convergence Points</h2>
+    <p style="color: var(--text-dim);">External projects mirrored by multiple ORGANVM repos</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Project</th>
+                <th>Repos</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project, repos in top_convergences %}
+            <tr>
+                <td><strong>{{ project }}</strong></td>
+                <td style="font-size: 0.85em;">{{ repos[:5]|join(', ') }}{% if repos|length > 5 %} +{{ repos|length - 5 }} more{% endif %}</td>
+                <td>{{ repos|length }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Per-Organ Density -->
+{% if organ_rows %}
+<div class="card" style="margin-top: 2rem;">
+    <h2>Mirror Density by Organ</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Organ</th>
+                <th>Technical</th>
+                <th>Parallel</th>
+                <th>Kinship</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in organ_rows %}
+            <tr>
+                <td><strong>{{ row.organ }}</strong></td>
+                <td>{{ row.technical }}</td>
+                <td>{{ row.parallel }}</td>
+                <td>{{ row.kinship }}</td>
+                <td><strong>{{ row.total }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Top Repos by Mirror Count -->
+{% if top_repos %}
+<div class="card" style="margin-top: 2rem;">
+    <h2>Most Connected Repos</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Repo</th>
+                <th>Organ</th>
+                <th>Mirrors</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for nmap in top_repos %}
+            <tr>
+                <td><strong>{{ nmap.repo }}</strong></td>
+                <td>{{ nmap.organ }}</td>
+                <td>{{ nmap.mirror_count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}
