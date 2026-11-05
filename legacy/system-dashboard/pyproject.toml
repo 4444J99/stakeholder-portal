@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68.0", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "organvm-system-dashboard"
+version = "0.1.0"
+description = "Live system health dashboard for the eight-organ organvm system"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+dependencies = [
+    "fastapi>=0.104",
+    "uvicorn[standard]>=0.24",
+    "jinja2>=3.1",
+    "organvm-engine",
+    "organvm-mcp-server",
+    "pyjwt[crypto]>=2.8",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "httpx", "ruff>=0.4"]
+
+[project.scripts]
+organvm-dashboard = "dashboard.app:main"
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+
+[tool.setuptools.packages.find]
+where = ["src"]

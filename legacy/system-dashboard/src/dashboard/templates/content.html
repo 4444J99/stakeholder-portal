@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Content Pipeline</h1>
+
+{% if cadence %}
+<div class="card">
+    <h2>Cadence</h2>
+    <div class="metrics">
+        <div class="metric">
+            <span class="value {% if cadence.streak >= 1 %}pass{% else %}fail{% endif %}">W{{ cadence.streak }}</span>
+            <span class="label">Streak</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ cadence.last_post_date or 'never' }}</span>
+            <span class="label">Last Post</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ cadence.total_posts }}</span>
+            <span class="label">Total</span>
+        </div>
+        <div class="metric">
+            <span class="value" style="color: var(--cyan);">{{ cadence.published_count }}</span>
+            <span class="label">Published</span>
+        </div>
+        <div class="metric">
+            <span class="value" style="color: var(--yellow);">{{ cadence.draft_count }}</span>
+            <span class="label">Draft</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>{{ total }} Posts</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Slug</th>
+                <th>Status</th>
+                <th>Hook</th>
+                <th>Distribution</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for post in posts %}
+            <tr>
+                <td>{{ post.date }}</td>
+                <td>{{ post.slug }}</td>
+                <td>
+                    {% if post.status == 'published' %}
+                    <span class="badge pass">{{ post.status }}</span>
+                    {% elif post.status == 'draft' %}
+                    <span class="badge" style="border-color: var(--yellow); color: var(--yellow);">{{ post.status }}</span>
+                    {% else %}
+                    <span class="badge">{{ post.status }}</span>
+                    {% endif %}
+                </td>
+                <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ post.hook }}</td>
+                <td>
+                    {% for ch_name, ch_data in post.distribution.items() %}
+                    {% if ch_data is mapping %}
+                    <span class="{% if ch_data.posted %}pass{% else %}fail{% endif %}">
+                        {{ ch_name[:2]|upper }}:{% if ch_data.posted %}✓{% else %}✗{% endif %}
+                    </span>
+                    {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

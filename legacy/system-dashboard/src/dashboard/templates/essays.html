@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Essays</h1>
+
+<div class="card">
+    <h2>{{ total }} Essays</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>#</th><th>Title</th><th>File</th></tr>
+        </thead>
+        <tbody>
+            {% for essay in essays %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ essay.title }}</td>
+                <td style="color: #888;">{{ essay.path }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

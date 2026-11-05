@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Omega Scorecard</h1>
+
+<div class="card">
+    <h2>System Completion: {{ met }}/{{ total }} ({{ pct }}%)</h2>
+    <div class="progress-bar">
+        <div class="fill" style="width: {{ pct }}%; background: {{ 'var(--pass)' if pct == 100 else 'var(--yellow)' }};"></div>
+        <div class="text">{{ pct }}%</div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Criteria</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>ID</th><th>Criterion</th><th>Status</th><th>Value</th></tr>
+        </thead>
+        <tbody>
+            {% for c in criteria %}
+            <tr>
+                <td>{{ c.id }}</td>
+                <td>{{ c.name }}</td>
+                <td class="{{ 'pass' if c.met else 'fail' }}">{{ 'MET' if c.met else 'NOT MET' }}</td>
+                <td style="color: #888;">{{ c.value }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

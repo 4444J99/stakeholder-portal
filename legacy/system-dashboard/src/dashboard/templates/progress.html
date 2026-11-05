@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Progress: &#x03B1; &rarr; &#x03A9;</h1>
+
+<!-- System summary card -->
+<div class="card">
+    <h2>System: {{ total_repos }} repos &mdash; {{ sys_pct }}%</h2>
+    <div class="progress-bar">
+        <div class="fill" style="width: {{ sys_pct }}%; background: {{ 'var(--pass)' if sys_pct == 100 else 'var(--cyan)' }};"></div>
+        <div class="text">{{ sys_pct }}%</div>
+    </div>
+    <div class="metrics-row">
+        <div class="metric"><div class="value">{{ total_ready }}</div><div class="label">Promo Ready</div></div>
+        <div class="metric"><div class="value" style="color: {{ 'var(--fail)' if total_stale > 0 else 'var(--pass)' }}">{{ total_stale }}</div><div class="label">Stale</div></div>
+        <div class="metric"><div class="value" style="color: {{ 'var(--yellow)' if total_discs > 0 else 'var(--pass)' }}">{{ total_discs }}</div><div class="label">Discrepancies</div></div>
+    </div>
+    <div style="margin-top: 0.8rem;">
+        {% for prof, count in profile_counts.items() %}
+        <span class="badge" style="border-color: {% if prof == 'code-full' %}var(--cyan){% elif prof == 'infrastructure' %}#666{% elif prof == 'archived' %}#555{% else %}var(--magenta){% endif %}; color: {% if prof == 'code-full' %}var(--cyan){% elif prof == 'infrastructure' %}#666{% elif prof == 'archived' %}#555{% else %}var(--magenta){% endif %}; margin-right: 0.3rem;">{{ prof }}: {{ count }}</span>
+        {% endfor %}
+    </div>
+    {% if lang_counts %}
+    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #888;">
+        Languages: {% for lang, count in lang_counts.items() %}{{ lang }} ({{ count }}){% if not loop.last %}, {% endif %}{% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Gate pass rates -->
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Gate Pass Rates</h2>
+    <div class="gate-rates">
+        {% for g in gate_stats %}
+        <div class="gate-rate-item">
+            <div class="gate-rate-bar" style="height: {{ g.rate }}%; background: {% if g.rate >= 80 %}var(--pass){% elif g.rate >= 50 %}var(--yellow){% else %}var(--fail){% endif %};"></div>
+            <div class="gate-rate-label">{{ g.name[:3] }}</div>
+            <div class="gate-rate-pct">{{ g.rate }}%</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Search/filter controls -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+        <input type="text" id="searchBox" placeholder="Search repos..." oninput="filterRepos()" style="flex: 1; min-width: 200px;">
+        <select id="profileFilter" onchange="filterRepos()">
+            <option value="">All profiles</option>
+            {% for prof in profile_counts.keys() %}
+            <option value="{{ prof }}">{{ prof }}</option>
+            {% endfor %}
+        </select>
+        <select id="promoFilter" onchange="filterRepos()">
+            <option value="">All promos</option>
+            {% for promo in promo_counts.keys() %}
+            <option value="{{ promo }}">{{ promo }}</option>
+            {% endfor %}
+        </select>
+        <select id="sortSelect" onchange="sortRepos()">
+            <option value="score-desc">Score &#x2193;</option>
+            <option value="score-asc">Score &#x2191;</option>
+            <option value="name-asc">Name A-Z</option>
+            <option value="stale-desc">Most stale</option>
+        </select>
+        <label style="font-size: 0.8rem;"><input type="checkbox" id="showFailingOnly" onchange="filterRepos()"> Failing only</label>
+        <label style="font-size: 0.8rem;"><input type="checkbox" id="showReadyOnly" onchange="filterRepos()"> Promo-ready</label>
+    </div>
+</div>
+
+<!-- Organ cards -->
+{% for organ in organs %}
+<div class="card organ-card" data-organ="{{ organ.id }}" style="margin-top: 1.5rem;">
+    <h2 style="cursor: pointer;" onclick="this.parentElement.querySelector('.organ-body').classList.toggle('collapsed')">
+        {{ organ.id }}: {{ organ.name }}
+        <span style="float: right; color: var(--yellow);">
+            {{ organ.count }} repos &mdash; {{ organ.avg_pct }}%
+            {% if organ.promo_ready %}<span style="color: var(--pass); font-size: 0.7rem;">&uarr;{{ organ.promo_ready }}</span>{% endif %}
+            {% if organ.stale %}<span style="color: var(--fail); font-size: 0.7rem;">!{{ organ.stale }}</span>{% endif %}
+        </span>
+    </h2>
+    <div class="progress-bar" style="margin-bottom: 1rem;">
+        <div class="fill" style="width: {{ organ.avg_pct }}%; background: var(--cyan);"></div>
+        <div class="text">{{ organ.avg_pct }}%</div>
+    </div>
+    <div class="organ-body">
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Repo</th>
+                    <th>Profile</th>
+                    <th style="min-width: 210px;">&#x03B1; &rarr; &#x03A9;</th>
+                    <th>Score</th>
+                    <th>Tier</th>
+                    <th>Promo</th>
+                    <th>Lang</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in organ.repos %}
+                <tr class="repo-row"
+                    data-repo="{{ p.repo }}"
+                    data-profile="{{ p.profile }}"
+                    data-promo="{{ p.promo }}"
+                    data-score="{{ p.pct }}"
+                    data-stale="{{ p.stale_days }}"
+                    data-failing="{{ 'true' if p.blockers else 'false' }}"
+                    data-ready="{{ 'true' if p.promo_ready else 'false' }}">
+                    <td><a href="/progress/repo/{{ p.repo }}" style="color: var(--white); text-decoration: underline;">{{ p.repo }}</a></td>
+                    <td><span class="badge" style="border-color: {% if p.profile == 'code-full' %}var(--cyan){% elif p.profile == 'infrastructure' %}#666{% elif p.profile == 'archived' %}#555{% else %}var(--magenta){% endif %}; color: {% if p.profile == 'code-full' %}var(--cyan){% elif p.profile == 'infrastructure' %}#666{% elif p.profile == 'archived' %}#555{% else %}var(--magenta){% endif %};">{{ p.profile }}</span></td>
+                    <td>
+                        <div class="gate-bar">
+                            {% for g in p.gates %}
+                            <span class="gate {% if not g.applicable %}gate-na{% elif g.passed %}gate-pass{% elif g.get('discrepancy') %}gate-warn{% else %}gate-fail{% endif %}" title="{{ g.name }}: {{ g.detail|default('') }}{% if g.get('next_action') %} → {{ g.next_action }}{% endif %}">
+                                {{ g.name[:2] }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td class="{{ 'pass' if p.pct >= 80 else 'fail' if p.pct < 40 else '' }}">{{ p.score }}/{{ p.total }} <span style="color:#888; font-size:0.7rem;">{{ p.pct }}%</span></td>
+                    <td><span class="badge badge-{{ p.tier }}">{{ p.tier }}</span></td>
+                    <td style="font-size: 0.75rem;">
+                        {{ p.promo }}
+                        {% if p.promo_ready %}<span style="color: var(--pass);">&uarr;</span>{% endif %}
+                    </td>
+                    <td style="font-size: 0.7rem; color: #888;">{{ p.primary_lang }}</td>
+                    <td style="font-size: 0.7rem;">
+                        {% if p.is_stale %}<span style="color: var(--fail);">STALE</span>{% elif p.is_warn_stale %}<span style="color: var(--yellow);">aging</span>{% endif %}
+                        {% if p.discrepancies %}<span style="color: var(--yellow);" title="{{ p.discrepancies|length }} discrepancies">&#x26A0;</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<style>
+    .metrics-row { display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; }
+    .gate-bar { display: flex; gap: 2px; }
+    .gate {
+        width: 20px; height: 20px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.55rem; font-weight: bold;
+        text-transform: uppercase; border: 1px solid;
+    }
+    .gate-pass { background: var(--pass); border-color: var(--pass); color: var(--black); }
+    .gate-fail { background: transparent; border-color: var(--fail); color: var(--fail); }
+    .gate-warn { background: var(--yellow); border-color: var(--yellow); color: var(--black); }
+    .gate-na { background: transparent; border-color: #333; color: #444; }
+    .collapsed { display: none; }
+    .badge-infrastructure { border-color: #666; color: #666; }
+    .badge-stub { border-color: #555; color: #555; }
+    .gate-rates {
+        display: flex; gap: 4px; align-items: flex-end;
+        height: 80px; padding: 0 0.5rem;
+    }
+    .gate-rate-item {
+        flex: 1; display: flex; flex-direction: column;
+        align-items: center; height: 100%;
+        position: relative;
+    }
+    .gate-rate-bar {
+        width: 100%; position: absolute; bottom: 24px;
+        min-height: 2px; transition: height 0.3s;
+    }
+    .gate-rate-label {
+        position: absolute; bottom: 10px;
+        font-size: 0.55rem; text-transform: uppercase;
+        letter-spacing: 0.05em; color: #888;
+    }
+    .gate-rate-pct {
+        position: absolute; bottom: 0;
+        font-size: 0.6rem; color: var(--white);
+    }
+</style>
+
+<script>
+function filterRepos() {
+    const search = document.getElementById('searchBox').value.toLowerCase();
+    const profile = document.getElementById('profileFilter').value;
+    const promo = document.getElementById('promoFilter').value;
+    const failingOnly = document.getElementById('showFailingOnly').checked;
+    const readyOnly = document.getElementById('showReadyOnly').checked;
+
+    document.querySelectorAll('.repo-row').forEach(row => {
+        const repo = row.dataset.repo.toLowerCase();
+        const rProfile = row.dataset.profile;
+        const rPromo = row.dataset.promo;
+        const failing = row.dataset.failing === 'true';
+        const ready = row.dataset.ready === 'true';
+
+        let show = true;
+        if (search && !repo.includes(search)) show = false;
+        if (profile && rProfile !== profile) show = false;
+        if (promo && rPromo !== promo) show = false;
+        if (failingOnly && !failing) show = false;
+        if (readyOnly && !ready) show = false;
+
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function sortRepos() {
+    const mode = document.getElementById('sortSelect').value;
+    document.querySelectorAll('.organ-card').forEach(card => {
+        const tbody = card.querySelector('tbody');
+        if (!tbody) return;
+        const rows = Array.from(tbody.querySelectorAll('.repo-row'));
+
+        rows.sort((a, b) => {
+            if (mode === 'score-desc') return parseInt(b.dataset.score) - parseInt(a.dataset.score);
+            if (mode === 'score-asc') return parseInt(a.dataset.score) - parseInt(b.dataset.score);
+            if (mode === 'name-asc') return a.dataset.repo.localeCompare(b.dataset.repo);
+            if (mode === 'stale-desc') return parseInt(b.dataset.stale) - parseInt(a.dataset.stale);
+            return 0;
+        });
+
+        rows.forEach(row => tbody.appendChild(row));
+    });
+}
+</script>
+{% endblock %}

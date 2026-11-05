@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Ontologia</h1>
+
+{% if not available %}
+<div class="card" style="border-color: var(--fail);">
+    <h2 style="color: var(--fail);">Ontologia Unavailable</h2>
+    <p>The ontologia package is not installed. Install it with:
+    <code style="color: var(--cyan);">pip install -e organvm-ontologia/</code></p>
+</div>
+
+{% elif detail %}
+    {% if detail.not_found %}
+    <!-- Entity Not Found -->
+    <div class="card" style="border-color: var(--fail);">
+        <h2 style="color: var(--fail);">Entity Not Found</h2>
+        <p>No entity with UID <code style="color: var(--yellow);">{{ detail.uid }}</code></p>
+        <p style="margin-top: 0.5rem;"><a href="/ontologia/" style="color: var(--cyan);">&larr; Back to browser</a></p>
+    </div>
+    {% else %}
+    <!-- Entity Detail -->
+    <div style="margin-bottom: 1rem;">
+        <a href="/ontologia/" style="color: var(--cyan); font-size: 0.85rem; text-decoration: none;">&larr; Back to browser</a>
+    </div>
+
+    <div class="card" style="border-color: var(--magenta);">
+        <h2 style="color: var(--magenta);">{{ detail.current_name }}</h2>
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1rem;">
+            <div>
+                <div style="font-size: 0.75rem; text-transform: uppercase; color: #666;">UID</div>
+                <div style="font-size: 0.85rem; color: var(--yellow); font-family: monospace;">{{ detail.uid }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; text-transform: uppercase; color: #666;">Type</div>
+                <div style="font-size: 0.85rem;">
+                    <span class="badge" style="border-color: var(--cyan); color: var(--cyan);">{{ detail.entity_type }}</span>
+                </div>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; text-transform: uppercase; color: #666;">Status</div>
+                <div style="font-size: 0.85rem;">
+                    {% if detail.lifecycle_status == 'active' %}
+                    <span class="badge" style="border-color: var(--pass); color: var(--pass);">{{ detail.lifecycle_status }}</span>
+                    {% elif detail.lifecycle_status == 'deprecated' %}
+                    <span class="badge" style="border-color: var(--yellow); color: var(--yellow);">{{ detail.lifecycle_status }}</span>
+                    {% elif detail.lifecycle_status == 'archived' %}
+                    <span class="badge" style="border-color: #666; color: #666;">{{ detail.lifecycle_status }}</span>
+                    {% else %}
+                    <span class="badge">{{ detail.lifecycle_status }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; text-transform: uppercase; color: #666;">Created</div>
+                <div style="font-size: 0.85rem; color: #888;">{{ detail.created_at }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; text-transform: uppercase; color: #666;">Created By</div>
+                <div style="font-size: 0.85rem; color: #888;">{{ detail.created_by }}</div>
+            </div>
+        </div>
+
+        {% if detail.metadata %}
+        <div style="border-top: 1px solid var(--border); padding-top: 0.75rem; margin-top: 0.75rem;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: #666; margin-bottom: 0.5rem; letter-spacing: 0.1em;">Metadata</div>
+            {% for key, value in detail.metadata.items() %}
+            <div style="font-size: 0.8rem; padding: 0.15rem 0;">
+                <span style="color: var(--cyan);">{{ key }}:</span> <span style="color: #888;">{{ value }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Name History -->
+    {% if detail.name_history %}
+    <div class="card" style="margin-top: 1.5rem;">
+        <h2>Name History</h2>
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Primary</th>
+                    <th>Recorded</th>
+                    <th>Retired</th>
+                    <th>Source</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for nr in detail.name_history %}
+                <tr>
+                    <td>{{ nr.display_name }}</td>
+                    <td>
+                        {% if nr.is_primary %}
+                        <span class="pass">&#10003;</span>
+                        {% else %}
+                        <span style="color: #666;">-</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 0.8rem; white-space: nowrap; color: #888;">{{ nr.recorded_at }}</td>
+                    <td style="font-size: 0.8rem; white-space: nowrap;">
+                        {% if nr.retired_at %}
+                        <span style="color: var(--yellow);">{{ nr.retired_at }}</span>
+                        {% else %}
+                        <span style="color: var(--pass);">active</span>
+                        {% endif %}
+                    </td>
+                    <td style="color: #888;">{{ nr.source }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Entity Events -->
+    {% if detail.events %}
+    <div class="card" style="margin-top: 1.5rem;">
+        <h2>Entity Events</h2>
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Event</th>
+                    <th>Property</th>
+                    <th>Previous</th>
+                    <th>New</th>
+                    <th>Source</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for evt in detail.events %}
+                <tr>
+                    <td style="font-size: 0.8rem; white-space: nowrap;">{{ evt.timestamp }}</td>
+                    <td>
+                        <span class="badge" style="border-color: var(--cyan); color: var(--cyan);">{{ evt.event_type }}</span>
+                    </td>
+                    <td style="color: #888;">{{ evt.changed_property }}</td>
+                    <td style="color: var(--yellow); font-size: 0.8rem;">{{ evt.previous_value }}</td>
+                    <td style="color: var(--pass); font-size: 0.8rem;">{{ evt.new_value }}</td>
+                    <td style="color: #888;">{{ evt.source }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% endif %}
+
+{% else %}
+<!-- Main Browser View -->
+
+<!-- Metrics Row -->
+<div style="display: flex; flex-wrap: wrap;">
+    <div class="metric"><div class="value">{{ entity_count }}</div><div class="label">Entities</div></div>
+    {% for etype, count in counts_by_type.items() %}
+    <div class="metric"><div class="value">{{ count }}</div><div class="label">{{ etype }}</div></div>
+    {% endfor %}
+</div>
+
+<!-- Status Distribution -->
+{% if counts_by_status %}
+<div class="card" style="margin-top: 2rem;">
+    <h2>Lifecycle Distribution</h2>
+    <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+        {% for status, count in counts_by_status.items() %}
+        <div>
+            <span style="font-size: 1.2rem; font-weight: bold;
+                {% if status == 'active' %}color: var(--pass);
+                {% elif status == 'deprecated' %}color: var(--yellow);
+                {% elif status == 'archived' %}color: #666;
+                {% else %}color: var(--white);
+                {% endif %}">{{ count }}</span>
+            <span style="font-size: 0.75rem; text-transform: uppercase; color: #888; margin-left: 0.25rem;">{{ status }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Entity Table -->
+{% if entities %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Entity Registry</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>UID</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in entities %}
+            <tr>
+                <td style="font-family: monospace; font-size: 0.8rem;">
+                    <a href="/ontologia/{{ e.uid }}" style="color: var(--yellow); text-decoration: none;">{{ e.uid }}</a>
+                </td>
+                <td>{{ e.name }}</td>
+                <td>
+                    <span class="badge" style="border-color: var(--cyan); color: var(--cyan);">{{ e.entity_type }}</span>
+                </td>
+                <td>
+                    {% if e.lifecycle_status == 'active' %}
+                    <span class="badge" style="border-color: var(--pass); color: var(--pass);">{{ e.lifecycle_status }}</span>
+                    {% elif e.lifecycle_status == 'deprecated' %}
+                    <span class="badge" style="border-color: var(--yellow); color: var(--yellow);">{{ e.lifecycle_status }}</span>
+                    {% elif e.lifecycle_status == 'archived' %}
+                    <span class="badge" style="border-color: #666; color: #666;">{{ e.lifecycle_status }}</span>
+                    {% else %}
+                    <span class="badge">{{ e.lifecycle_status }}</span>
+                    {% endif %}
+                </td>
+                <td style="font-size: 0.8rem; white-space: nowrap; color: #888;">{{ e.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% elif entity_count == 0 %}
+<div class="card" style="margin-top: 1.5rem; border-color: var(--border);">
+    <h2>No Entities</h2>
+    <p style="color: #888;">The ontologia store is empty. Entities will appear here once the system is bootstrapped.</p>
+</div>
+{% endif %}
+
+<!-- Recent Events -->
+{% if events %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Recent Events
+        <a href="/ontologia/events/" style="font-size: 0.75rem; color: var(--cyan); text-decoration: none; margin-left: 1rem;">View all &rarr;</a>
+    </h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Event</th>
+                <th>Entity</th>
+                <th>Source</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for evt in events %}
+            <tr>
+                <td style="font-size: 0.8rem; white-space: nowrap;">{{ evt.timestamp }}</td>
+                <td>
+                    <span class="badge" style="border-color: var(--cyan); color: var(--cyan);">{{ evt.event_type }}</span>
+                </td>
+                <td style="font-family: monospace; font-size: 0.8rem;">
+                    {% if evt.subject_entity %}
+                    <a href="/ontologia/{{ evt.subject_entity }}" style="color: var(--yellow); text-decoration: none;">{{ evt.subject_entity[:20] }}...</a>
+                    {% else %}
+                    <span style="color: #666;">-</span>
+                    {% endif %}
+                </td>
+                <td style="color: #888;">{{ evt.source }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

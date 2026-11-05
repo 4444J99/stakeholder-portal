@@ -1,0 +1,23 @@
+<table>
+    <thead>
+        <tr>
+            <th>Timestamp</th>
+            <th>Type</th>
+            <th>Source</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for evt in event_rows %}
+        <tr>
+            <td style="font-size: 0.8rem; white-space: nowrap;">{{ evt.timestamp }}</td>
+            <td>
+                <span class="badge" style="border-color: var(--cyan); color: var(--cyan);">{{ evt.event_type }}</span>
+            </td>
+            <td style="color: #888;">{{ evt.source }}</td>
+        </tr>
+        {% endfor %}
+        {% if not event_rows %}
+        <tr><td colspan="3" style="color: #666; text-align: center;">No events recorded</td></tr>
+        {% endif %}
+    </tbody>
+</table>

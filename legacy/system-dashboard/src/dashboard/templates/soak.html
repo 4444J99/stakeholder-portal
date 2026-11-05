@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Soak Test (VIGILIA)</h1>
+
+<div class="card">
+    <h2>VIGILIA Timer — Day {{ elapsed }}/30</h2>
+    <div class="progress-bar">
+        <div class="fill" style="width: {{ pct }}%;"></div>
+        <div class="text">{{ pct }}% — {{ remaining }} days remaining</div>
+    </div>
+    <p style="margin-top: 1rem; color: #888;">{{ total_snapshots }} snapshots collected</p>
+</div>
+
+<div class="card">
+    <h2>CI Trend</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Date</th><th>Passing</th><th>Failing</th><th>Total</th><th>Rate</th></tr>
+        </thead>
+        <tbody>
+            {% for entry in ci_trend %}
+            <tr>
+                <td>{{ entry.date }}</td>
+                <td class="pass">{{ entry.passing }}</td>
+                <td class="fail">{{ entry.failing }}</td>
+                <td>{{ entry.total }}</td>
+                <td>{{ entry.rate }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+{% if latest %}
+<div class="card">
+    <h2>Latest Snapshot</h2>
+    <p>Registry: <span class="{{ 'pass' if latest.get('validation', {}).get('registry_pass') else 'fail' }}">{{ 'PASS' if latest.get('validation', {}).get('registry_pass') else 'FAIL' }}</span></p>
+    <p>Dependencies: <span class="{{ 'pass' if latest.get('validation', {}).get('dependency_pass') else 'fail' }}">{{ 'PASS' if latest.get('validation', {}).get('dependency_pass') else 'FAIL' }}</span></p>
+    {% if latest.get('engagement') %}
+    <p style="margin-top: 0.5rem;">Stars: {{ latest.engagement.get('total_stars', 0) }} | Forks: {{ latest.engagement.get('total_forks', 0) }}</p>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

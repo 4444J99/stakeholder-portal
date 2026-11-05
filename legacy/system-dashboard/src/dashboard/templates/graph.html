@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dependency Graph</h1>
+
+<div style="display: flex; flex-wrap: wrap;">
+    <div class="metric"><div class="value">{{ total_nodes }}</div><div class="label">Nodes</div></div>
+    <div class="metric"><div class="value">{{ total_edges }}</div><div class="label">Edges</div></div>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <h2>Cross-Organ Dependencies</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Direction</th><th>Count</th></tr>
+        </thead>
+        <tbody>
+            {% for direction, count in cross_organ.items() %}
+            <tr>
+                <td>{{ direction }}</td>
+                <td>{{ count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<div class="card">
+    <h2>All Edges</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>From</th><th>To</th></tr>
+        </thead>
+        <tbody>
+            {% for edge in edges %}
+            <tr>
+                <td style="color: var(--cyan);">{{ edge['from'].split('/')[-1] }}</td>
+                <td>{{ edge.to.split('/')[-1] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

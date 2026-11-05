@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Ontologia — Variables</h1>
+
+<div style="margin-bottom: 1rem;">
+    <a href="/ontologia/" style="color: var(--cyan); font-size: 0.85rem; text-decoration: none;">&larr; Back to browser</a>
+</div>
+
+{% if not available %}
+<div class="card" style="border-color: var(--fail);">
+    <h2 style="color: var(--fail);">Ontologia Unavailable</h2>
+    <p>The ontologia package is not installed. Install it with:
+    <code style="color: var(--cyan);">pip install -e organvm-ontologia/</code></p>
+</div>
+
+{% else %}
+
+<!-- Summary row -->
+<div style="display: flex; flex-wrap: wrap;">
+    <div class="metric">
+        <div class="value">{{ total_count }}</div>
+        <div class="label">Variables</div>
+    </div>
+    {% for scope, count in scope_counts.items() %}
+    {% if count > 0 %}
+    <div class="metric">
+        <div class="value">{{ count }}</div>
+        <div class="label">{{ scope }}</div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+{% if variables %}
+<div class="card" style="margin-top: 2rem;">
+    <h2>Variable Registry</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Key</th>
+                <th>Value</th>
+                <th>Scope</th>
+                <th>Entity</th>
+                <th>Type</th>
+                <th>Mutability</th>
+                <th>Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in variables %}
+            <tr>
+                <td style="color: var(--yellow); font-family: monospace; font-size: 0.85rem;">{{ v.key }}</td>
+                <td style="font-size: 0.85rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ v.value }}</td>
+                <td>
+                    {% if v.scope == 'global' %}
+                    <span class="badge" style="border-color: var(--magenta); color: var(--magenta);">{{ v.scope }}</span>
+                    {% elif v.scope == 'organ' %}
+                    <span class="badge" style="border-color: var(--cyan); color: var(--cyan);">{{ v.scope }}</span>
+                    {% elif v.scope == 'repo' %}
+                    <span class="badge" style="border-color: var(--pass); color: var(--pass);">{{ v.scope }}</span>
+                    {% else %}
+                    <span class="badge" style="border-color: #888; color: #888;">{{ v.scope }}</span>
+                    {% endif %}
+                </td>
+                <td style="font-size: 0.8rem;">
+                    {% if v.entity %}
+                    <a href="/ontologia/{{ v.entity_id }}" style="color: var(--cyan); text-decoration: none;">{{ v.entity }}</a>
+                    {% else %}
+                    <span style="color: #666;">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge" style="border-color: #888; color: #888;">{{ v.var_type }}</span>
+                </td>
+                <td>
+                    {% if v.mutability == 'constant' %}
+                    <span class="badge" style="border-color: var(--fail); color: var(--fail);">{{ v.mutability }}</span>
+                    {% elif v.mutability == 'computed' %}
+                    <span class="badge" style="border-color: var(--yellow); color: var(--yellow);">{{ v.mutability }}</span>
+                    {% else %}
+                    <span class="badge">{{ v.mutability }}</span>
+                    {% endif %}
+                </td>
+                <td style="font-size: 0.8rem; white-space: nowrap; color: #888;">{{ v.updated }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+{% else %}
+<div class="card" style="margin-top: 2rem; border-color: var(--border);">
+    <h2>No Variables</h2>
+    <p style="color: #888;">The variable store is empty. Variables will appear here once the system registers them.</p>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>IRF — Index Rerum Faciendarum</h1>
+
+{% if error %}
+<div class="card" style="border-color: var(--fail);">
+    <h2 style="color: var(--fail);">Load Error</h2>
+    <p style="color: var(--fail); font-size: 0.85rem;">{{ error }}</p>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>Summary</h2>
+    <div>
+        <div class="metric">
+            <div class="value">{{ stats.total }}</div>
+            <div class="label">Total</div>
+        </div>
+        <div class="metric">
+            <div class="value" style="color: var(--cyan);">{{ stats.open }}</div>
+            <div class="label">Open</div>
+        </div>
+        <div class="metric">
+            <div class="value" style="color: var(--pass);">{{ stats.completed }}</div>
+            <div class="label">Completed</div>
+        </div>
+        <div class="metric">
+            <div class="value" style="color: var(--fail);">{{ stats.blocked }}</div>
+            <div class="label">Blocked</div>
+        </div>
+        <div class="metric">
+            <div class="value" style="color: var(--magenta);">{{ p0_items | length }}</div>
+            <div class="label">P0 Open</div>
+        </div>
+    </div>
+    <div style="margin-top: 1.5rem;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; color: #888; margin-bottom: 0.4rem;">
+            Completion Rate — {{ completion_pct }}%
+        </div>
+        <div class="progress-bar">
+            <div class="fill" style="width: {{ completion_pct }}%; background: {{ 'var(--pass)' if completion_pct >= 80 else 'var(--yellow)' if completion_pct >= 40 else 'var(--fail)' }};"></div>
+            <div class="text">{{ completion_pct }}%</div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Priority Breakdown</h2>
+    <div>
+        {% for pri, count in stats.by_priority.items() %}
+        <div class="metric">
+            <div class="value" style="color: {{ 'var(--fail)' if pri == 'P0' else 'var(--magenta)' if pri == 'P1' else 'var(--yellow)' if pri == 'P2' else 'var(--white)' }};">{{ count }}</div>
+            <div class="label">{{ pri }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if p0_items %}
+<div class="card" style="margin-top: 1.5rem; border-color: var(--fail);">
+    <h2 style="color: var(--fail);">P0 — Immediate Action Required ({{ p0_items | length }})</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Domain</th>
+                <th>Action</th>
+                <th>Owner</th>
+                <th>Blocker</th>
+                <th>Source</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in p0_items %}
+            <tr style="background: #1a0000;">
+                <td style="color: var(--fail); white-space: nowrap;">{{ item.id }}</td>
+                <td><span class="badge badge-flagship">{{ item.domain }}</span></td>
+                <td>{{ item.action }}</td>
+                <td style="color: #888; white-space: nowrap;">{{ item.owner }}</td>
+                <td style="color: var(--fail);">{{ item.blocker if item.blocker and item.blocker != 'None' else '—' }}</td>
+                <td style="color: #888; font-size: 0.75rem;">{{ item.source }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
+
+{% if open_items %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Open Items ({{ open_items | length }})</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Pri</th>
+                <th>Domain</th>
+                <th>Action</th>
+                <th>Owner</th>
+                <th>Blocker</th>
+                <th>Source</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in open_items | sort(attribute='priority') %}
+            <tr>
+                <td style="white-space: nowrap; color: {{ 'var(--fail)' if item.priority == 'P0' else 'var(--magenta)' if item.priority == 'P1' else 'var(--yellow)' if item.priority == 'P2' else 'var(--white)' }};">{{ item.id }}</td>
+                <td style="color: {{ 'var(--fail)' if item.priority == 'P0' else 'var(--magenta)' if item.priority == 'P1' else 'var(--yellow)' if item.priority == 'P2' else 'var(--white)' }}; font-weight: bold;">{{ item.priority }}</td>
+                <td><span class="badge badge-standard">{{ item.domain }}</span></td>
+                <td>{{ item.action }}</td>
+                <td style="color: #888; white-space: nowrap;">{{ item.owner }}</td>
+                <td style="color: {{ 'var(--fail)' if item.blocker and item.blocker != 'None' else '#888' }};">{{ item.blocker if item.blocker and item.blocker != 'None' else '—' }}</td>
+                <td style="color: #888; font-size: 0.75rem;">{{ item.source }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
+
+{% if completed_items %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Completed ({{ completed_items | length }})</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Domain</th>
+                <th>What</th>
+                <th>Session</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in completed_items %}
+            <tr>
+                <td style="white-space: nowrap; color: var(--pass);">{{ item.id }}</td>
+                <td><span class="badge badge-archive">{{ item.domain }}</span></td>
+                <td style="color: #888;">{{ item.action }}</td>
+                <td style="color: #888; font-size: 0.75rem;">{{ item.source }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
+
+{% if not open_items and not completed_items and not error %}
+<div class="card" style="margin-top: 1.5rem;">
+    <p style="color: #888;">No IRF items found. Check that the IRF file exists at the expected path.</p>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ project.repo }}</h1>
+
+<!-- Summary card -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <span class="badge badge-{{ project.tier }}">{{ project.tier }}</span>
+            <span class="badge" style="border-color: var(--magenta); color: var(--magenta);">{{ project.profile }}</span>
+            <span class="badge" style="border-color: var(--cyan); color: var(--cyan);">{{ project.organ }}</span>
+            {% if project.primary_lang != 'none' %}
+            <span class="badge" style="border-color: #888; color: #888;">{{ project.primary_lang }}</span>
+            {% endif %}
+        </div>
+        <div style="font-size: 2rem; font-weight: bold; color: var(--yellow);">{{ project.pct }}%</div>
+    </div>
+    {% if project.description %}
+    <p style="margin-top: 0.8rem; color: #aaa; font-size: 0.85rem;">{{ project.description }}</p>
+    {% endif %}
+    <div class="progress-bar" style="margin-top: 1rem;">
+        <div class="fill" style="width: {{ project.pct }}%; background: {% if project.pct == 100 %}var(--pass){% elif project.pct >= 70 %}var(--cyan){% elif project.pct >= 40 %}var(--yellow){% else %}var(--fail){% endif %};"></div>
+        <div class="text">{{ project.score }}/{{ project.total }}</div>
+    </div>
+</div>
+
+<!-- Gate detail card -->
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Gates</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Gate</th><th>Status</th><th>Detail</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+            {% for g in project.gates %}
+            <tr>
+                <td style="font-weight: bold;">{{ g.name }}</td>
+                <td>
+                    {% if not g.applicable %}
+                    <span style="color: #555;">N/A</span>
+                    {% elif g.passed %}
+                    <span class="pass">&#x2713; PASS</span>
+                    {% else %}
+                    <span class="fail">&#x2717; FAIL</span>
+                    {% endif %}
+                    {% if g.get('discrepancy') %}
+                    <span style="color: var(--yellow);" title="{{ g.discrepancy }}"> &#x26A0;</span>
+                    {% endif %}
+                </td>
+                <td style="color: #888; font-size: 0.8rem;">{{ g.detail }}</td>
+                <td style="color: var(--cyan); font-size: 0.8rem;">
+                    {% if g.get('next_action') and not g.passed %}
+                    &#x2192; {{ g.next_action }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<!-- Metadata cards -->
+<div style="display: flex; gap: 1.5rem; margin-top: 1.5rem; flex-wrap: wrap;">
+    <!-- Promotion -->
+    <div class="card" style="flex: 1; min-width: 300px;">
+        <h2>Promotion</h2>
+        <div class="metric"><div class="value">{{ project.promo }}</div><div class="label">Current</div></div>
+        <div class="metric"><div class="value">{{ project.next_promo }}</div><div class="label">Next Target</div></div>
+        <div class="metric">
+            <div class="value" style="color: {{ 'var(--pass)' if project.promo_ready else 'var(--fail)' }};">
+                {{ 'READY' if project.promo_ready else 'BLOCKED' }}
+            </div>
+            <div class="label">Status</div>
+        </div>
+    </div>
+
+    <!-- Implementation -->
+    <div class="card" style="flex: 1; min-width: 300px;">
+        <h2>Implementation</h2>
+        <div class="metric"><div class="value">{{ project.impl }}</div><div class="label">Status</div></div>
+        {% if project.deployment_url %}
+        <div class="metric"><div class="value" style="font-size: 0.8rem;">{{ project.deployment_url[:30] }}</div><div class="label">Deployed</div></div>
+        {% endif %}
+        <div class="metric">
+            <div class="value" style="color: {{ 'var(--pass)' if project.platinum else '#666' }};">
+                {{ 'YES' if project.platinum else 'NO' }}
+            </div>
+            <div class="label">Platinum</div>
+        </div>
+    </div>
+</div>
+
+<!-- Languages -->
+{% if project.languages %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Languages</h2>
+    {% for lang, count in project.languages.items() %}
+    <div style="display: flex; align-items: center; margin-bottom: 0.3rem;">
+        <span style="width: 100px; font-size: 0.8rem;">{{ lang }}</span>
+        <div style="flex: 1; height: 12px; background: var(--gray); margin: 0 0.5rem;">
+            {% set max_count = project.languages.values()|list|first %}
+            <div style="width: {{ (count / max_count * 100)|int }}%; height: 100%; background: var(--cyan);"></div>
+        </div>
+        <span style="font-size: 0.7rem; color: #888;">{{ count }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Scaffold -->
+{% if project.scaffold %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Scaffold Files</h2>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        {% for key, val in project.scaffold.items() %}
+        {% if key.startswith('has_') %}
+        <span class="badge" style="border-color: {{ 'var(--pass)' if val else 'var(--fail)' }}; color: {{ 'var(--pass)' if val else 'var(--fail)' }};">
+            {{ key[4:].replace('_', ' ') }}: {{ '&#x2713;' if val else '&#x2717;' }}
+        </span>
+        {% endif %}
+        {% endfor %}
+        {% if project.scaffold.get('readme_words') %}
+        <span class="badge" style="border-color: #888; color: #888;">README: {{ project.scaffold.readme_words }}w</span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Staleness -->
+{% if project.stale_days >= 0 %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Freshness</h2>
+    <div class="metric">
+        <div class="value" style="color: {% if project.is_stale %}var(--fail){% elif project.is_warn_stale %}var(--yellow){% else %}var(--pass){% endif %};">
+            {{ project.stale_days }}d
+        </div>
+        <div class="label">Since Validated</div>
+    </div>
+    {% if project.is_stale %}
+    <p style="color: var(--fail); font-size: 0.8rem; margin-top: 0.5rem;">This repo has not been validated in over 90 days.</p>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Revenue (ORGAN-III) -->
+{% if project.revenue_model %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Revenue</h2>
+    <div class="metric"><div class="value">{{ project.revenue_model }}</div><div class="label">Model</div></div>
+    <div class="metric"><div class="value">{{ project.revenue_status }}</div><div class="label">Status</div></div>
+</div>
+{% endif %}
+
+<!-- Blockers -->
+{% if project.blockers %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Blockers ({{ project.blockers|length }})</h2>
+    <ul style="list-style: none; padding: 0;">
+        {% for b in project.blockers %}
+        <li style="padding: 0.3rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem;">
+            <span class="fail">&#x2717;</span> {{ b }}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<!-- Next Actions -->
+{% if project.next_actions %}
+<div class="card" style="margin-top: 1.5rem;">
+    <h2>Next Actions</h2>
+    <ol style="padding-left: 1.5rem;">
+        {% for a in project.next_actions %}
+        <li style="padding: 0.3rem 0; font-size: 0.85rem; color: var(--cyan);">{{ a }}</li>
+        {% endfor %}
+    </ol>
+</div>
+{% endif %}
+
+<div style="margin-top: 2rem;">
+    <a href="/progress/" style="color: var(--cyan);">&larr; Back to all repos</a>
+</div>
+{% endblock %}
