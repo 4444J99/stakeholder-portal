@@ -33,6 +33,7 @@ npm run build
 - `ADMIN_API_TOKEN=...`: token fallback for admin/automation APIs.
 - `ADMIN_LOGIN_PASSWORD=...`: password for `/api/admin/session` login flow.
 - `ADMIN_SESSION_SECRET=...`: HMAC secret for signed admin session cookies.
+- `AUTH_GITHUB_ADMIN_ALLOWLIST=...`: comma-separated GitHub logins or `id:<numeric-id>`s granted the admin role via SSO; unlisted GitHub users sign in as non-admin and cannot reach `/admin/*` or `/dashboard` (missing/empty/malformed grants admin to nobody).
 - `CRON_SECRET=...`: secret for `/api/cron/maintenance` and `/api/cron/ingest` triggers.
 - `CRON_CONNECTOR_IDS=docs,workspace`: default connector set for cron route when query param not supplied.
 - `ALERT_WEBHOOK_URL=...`: generic webhook sink for critical alerts.
