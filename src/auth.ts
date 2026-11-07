@@ -1,5 +1,9 @@
 import NextAuth, { type DefaultSession } from "next-auth"
 import GitHub from "next-auth/providers/github"
+import {
+  parseGitHubAdminAllowlist,
+  resolveGitHubRole,
+} from "@/lib/github-admin-allowlist"
 
 declare module "next-auth" {
   interface Session {
@@ -17,9 +21,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     })
   ],
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, profile }) {
       if (user) {
-        token.role = "admin" // For simplicity in this demo, github users get admin. Customize as needed.
+        // Fail-closed SSO: only GitHub identities on
+        // AUTH_GITHUB_ADMIN_ALLOWLIST receive the admin role; every other
+        // authenticated user signs in as a non-admin ("public") user.
+        // Existing sessions keep the role issued at sign-in until they
+        // re-authenticate.
+        token.role = resolveGitHubRole(
+          profile,
+          parseGitHubAdminAllowlist(process.env.AUTH_GITHUB_ADMIN_ALLOWLIST)
+        );
       }
       return token
     },
