@@ -5,6 +5,7 @@ import {
   getTestamentStats,
 } from "@/data/testament";
 import { ArtifactCard } from "@/components/testament/ArtifactCard";
+import { EventTimeline } from "@/components/testament/EventTimeline";
 
 function MetricCell({ label, value }: { label: string; value: string | number }) {
   return (
@@ -94,6 +95,20 @@ export default function TestamentPage() {
             <ArtifactCard key={card.id} artifact={card} />
           ))}
         </div>
+      </section>
+
+      {/* Event timeline */}
+      <section>
+        <h2 className="mb-4 text-lg font-semibold tracking-tight">
+          Event Timeline
+        </h2>
+        <p className="mb-6 text-sm text-[var(--color-text-muted)]">
+          The testament as a hash-linked event chain — tier-colored events,
+          Merkle checkpoint markers, and drill-down into each event&apos;s
+          anchor proof. The badge recomputes the chain from the feed on every
+          render; it is a verification, not a label.
+        </p>
+        <EventTimeline />
       </section>
 
       {/* Constitutional grounding */}
